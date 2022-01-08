@@ -9,6 +9,7 @@
 
 using namespace std;
 
+
 void printArr(int *a, int n) {
     for (int i = 0; i < n; i++)
         cout << a[i] << " ";
@@ -42,19 +43,27 @@ int factor(int n) {
 class PermutationNumber {
     vector<uint64_t> factorial;
 
-    u_int64_t get(vector<int> &v) {
-        u_int64_t res = 0;
-        for (int i = 0; i < v.size(); i++) {
-            res += v[i] * factorial[v.size() - i-1];
-        }
-
-    }
-
 public:
     PermutationNumber(int n) {
         factorial.resize(n + 1);
         factorial[0] = 1;
         for (int i = 1; i <= n; i++) factorial[i] = i * factorial[i - 1];
+    }
+
+    u_int64_t get(const vector<int> &v) {
+        vector<int> s = v;
+        int k = 1;
+        for (auto a: v) {
+            for (int i=k; i<v.size(); i++) {
+                if (v[i] > a) s[i]--;
+            }
+            k++;
+        }
+        u_int64_t res = 0;
+        for (int i = 0; i < v.size(); i++) {
+            res += s[i]  * factorial[v.size() - i - 1];
+        }
+        return res;
     }
 };
 
@@ -149,6 +158,7 @@ class Square {
     vector<vector<int>> &t;
     int n;
     vector<int> used, path, unUsed, toNewPath;
+    PermutationNumber permutationNumber;
 
 
     int getNearest(int k) {
@@ -236,7 +246,7 @@ class Square {
     }
 
 public:
-    Square(vector<vector<int>> &t) : t(t), n(t.size()) {
+    Square(vector<vector<int>> &t) : t(t), n(t.size()), permutationNumber(n) {
         used.resize(n);
         path.resize(n);
         unUsed.reserve(n);
@@ -245,7 +255,9 @@ public:
     struct PermListItem {
         int bit;
         vector<int> permutation;
+        uint64_t number;
     };
+
     vector<PermListItem> getList() {
         int lookFor = 1;
         vector<PermListItem> res;
@@ -253,14 +265,14 @@ public:
             path[i] = i;
             lookFor *= t[i][i];
         }
-        res.push_back({lookFor, path});
+        res.push_back({lookFor, path, permutationNumber.get(path)});
         NextResult x;
         do {
             lookFor = !lookFor;
             x = findNext(lookFor);
             if (x.ok) {
                 printArr(x.result.data(), n);
-                res.push_back({lookFor, x.result});
+                res.push_back({lookFor, x.result, permutationNumber.get(x.result)});
             }
         } while (x.ok);
         return res;
@@ -271,7 +283,7 @@ class Table {
 public:
     int n, m, k;
     vector<vector<int>> t;
-    PermutationNumber permutationNumber;
+
 
     void printList(vector<vector<Pair<int, vector<Pair<int, int>>>>> &list) {
         for (auto it1: list) {
@@ -355,7 +367,7 @@ public:
 
     }
 
-    Table(stringstream &buff): permutationNumber(10) {
+    Table(stringstream &buff) {
         buff >> n >> m >> k;
         t.resize(n);
         for (auto &it: t) {
