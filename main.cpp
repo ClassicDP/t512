@@ -54,14 +54,14 @@ public:
         vector<int> s = v;
         int k = 1;
         for (auto a: v) {
-            for (int i=k; i<v.size(); i++) {
+            for (int i = k; i < v.size(); i++) {
                 if (v[i] > a) s[i]--;
             }
             k++;
         }
         u_int64_t res = 0;
         for (int i = 0; i < v.size(); i++) {
-            res += s[i]  * factorial[v.size() - i - 1];
+            res += s[i] * factorial[v.size() - i - 1];
         }
         return res;
     }
@@ -180,7 +180,6 @@ class Square {
 
 
     bool zeroCombinations() {
-        bool res = false;
         unUsed.clear();
         for (int l = 0; l < n; l++) if (!used[l]) unUsed.push_back(l);
         bool solve;
@@ -275,6 +274,11 @@ public:
                 res.push_back({lookFor, x.result, permutationNumber.get(x.result)});
             }
         } while (x.ok);
+        res.push_back(res[0]);
+        auto it =res.end() - 1;
+        reverse(it->permutation.begin(), it->permutation.end());
+        it->bit = !(it-1)->bit;
+        it->number = permutationNumber.get(it->permutation)+1;
         return res;
     }
 };
@@ -298,7 +302,8 @@ public:
         }
     }
 
-    void findNext() {
+    int calcAll() {
+        int res = 0;
         vector<vector<int>> sq(k);
         Combinations nK(n, k);
         Combinations mK(m, k);
@@ -312,8 +317,13 @@ public:
                 }
                 Square square(sq);
                 auto list = square.getList();
+                int last = 0;
+                for (auto &it: list) {
+                    if (!it.bit) res += it.number - last; else last = it.number;
+                }
             }
         }
+        return res;
     }
 
     vector<vector<Pair<int, vector<Pair<int, int>>>>> makeList() {
@@ -397,9 +407,11 @@ int main(int argc, char const *argv[]) {
     milliseconds t0 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto list = table.makeList();
     table.printList(list);
-    table.findNext();
+    int n1 = table.calcAll();
+    int n2 = table.calc();
     milliseconds t1 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     cout << t1.count() - t0.count() << endl;
+    cout << n1 << " " << n2 << endl;
     output.close();
     return 0;
 }
