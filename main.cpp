@@ -39,6 +39,25 @@ int factor(int n) {
     return p;
 }
 
+class PermutationNumber {
+    vector<uint64_t> factorial;
+
+    u_int64_t get(vector<int> &v) {
+        u_int64_t res = 0;
+        for (int i = 0; i < v.size(); i++) {
+            res += v[i] * factorial[v.size() - i-1];
+        }
+
+    }
+
+public:
+    PermutationNumber(int n) {
+        factorial.resize(n + 1);
+        factorial[0] = 1;
+        for (int i = 1; i <= n; i++) factorial[i] = i * factorial[i - 1];
+    }
+};
+
 class Permutations {
     vector<vector<int>> list;
     int listP = 0;
@@ -108,18 +127,17 @@ class Pair {
 public:
     T1 x;
     T2 y;
+
     Pair() = default;
+
     Pair(T1 x, T2 y) {
         this->x = x;
         this->y = y;
     }
+
     bool operator<(Pair const &p) const {
         return x < p.x || (x == p.x && y < p.y);
     }
-};
-
-struct Pos {
-    int i, j;
 };
 
 struct NextResult {
@@ -127,15 +145,11 @@ struct NextResult {
     vector<int> result;
 };
 
-struct ZPos {
-    int r, c;
-};
-
 class Square {
     vector<vector<int>> &t;
     int n;
     vector<int> used, path, unUsed, toNewPath;
-    vector<ZPos> zeros;
+
 
     int getNearest(int k) {
         auto it =
@@ -158,7 +172,6 @@ class Square {
     bool zeroCombinations() {
         bool res = false;
         unUsed.clear();
-        zeros.clear();
         for (int l = 0; l < n; l++) if (!used[l]) unUsed.push_back(l);
         bool solve;
         do {
@@ -227,24 +240,29 @@ public:
         used.resize(n);
         path.resize(n);
         unUsed.reserve(n);
-        zeros.reserve(n);
     }
 
-    vector<vector<int>> getList() {
+    struct PermListItem {
+        int bit;
+        vector<int> permutation;
+    };
+    vector<PermListItem> getList() {
         int lookFor = 1;
-        vector<vector<int>> res;
+        vector<PermListItem> res;
         for (int i = 0; i < n; i++) {
             path[i] = i;
             lookFor *= t[i][i];
         }
-        bool ok = true;
+        res.push_back({lookFor, path});
+        NextResult x;
         do {
             lookFor = !lookFor;
-            auto x = findNext(lookFor);
-            if (x.ok) printArr(x.result.data(), n);
-            ok = x.ok;
-            if (ok) res.push_back(x.result);
-        } while (ok);
+            x = findNext(lookFor);
+            if (x.ok) {
+                printArr(x.result.data(), n);
+                res.push_back({lookFor, x.result});
+            }
+        } while (x.ok);
         return res;
     }
 };
@@ -253,6 +271,7 @@ class Table {
 public:
     int n, m, k;
     vector<vector<int>> t;
+    PermutationNumber permutationNumber;
 
     void printList(vector<vector<Pair<int, vector<Pair<int, int>>>>> &list) {
         for (auto it1: list) {
@@ -336,7 +355,7 @@ public:
 
     }
 
-    Table(stringstream &buff) {
+    Table(stringstream &buff): permutationNumber(10) {
         buff >> n >> m >> k;
         t.resize(n);
         for (auto &it: t) {
@@ -366,8 +385,8 @@ int main(int argc, char const *argv[]) {
     milliseconds t0 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto list = table.makeList();
     table.printList(list);
-    milliseconds t1 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     table.findNext();
+    milliseconds t1 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     cout << t1.count() - t0.count() << endl;
     output.close();
     return 0;
