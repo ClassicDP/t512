@@ -16,6 +16,12 @@ void printArr(int *a, int n) {
     cout << endl;
 }
 
+void printArr(const vector<int> &v) {
+    for (auto x: v)
+        cout << x << " ";
+    cout << endl;
+}
+
 int cNM(int n, int m) {
     int res = 1;
     for (int i = m + 1; i <= n; i++)
@@ -44,13 +50,14 @@ class PermutationNumber {
     vector<uint64_t> factorial;
 
 public:
+
     PermutationNumber(int n) {
         factorial.resize(n + 1);
         factorial[0] = 1;
         for (int i = 1; i <= n; i++) factorial[i] = i * factorial[i - 1];
     }
 
-    u_int64_t get(const vector<int> &v) {
+    vector<int> getMess(const vector<int> &v) {
         vector<int> s = v;
         int k = 1;
         for (auto a: v) {
@@ -59,6 +66,11 @@ public:
             }
             k++;
         }
+        return s;
+    }
+
+    u_int64_t get(const vector<int> &v) {
+        auto s = getMess(v);
         u_int64_t res = 0;
         for (int i = 0; i < v.size(); i++) {
             res += s[i] * factorial[v.size() - i - 1];
@@ -161,12 +173,12 @@ class Square {
     PermutationNumber permutationNumber;
 
 
-    int getNearest(int k) {
+    int takeNearest(vector<int> &v, int k) {
         auto it =
-                find_if(toNewPath.begin(), toNewPath.end(), [k](const int &it) { return it >= k; });
-        if (it != toNewPath.end()) {
+                find_if(v.begin(), v.end(), [k](const int &it) { return it > k; });
+        if (it != v.end()) {
             int res = *it;
-            toNewPath.erase(it);
+            v.erase(it);
             return res;
         }
         return -1;
@@ -189,7 +201,7 @@ class Square {
             int pColumn;
             while (k < n) {
                 do {
-                    pColumn = getNearest(path[k]);
+                    pColumn = takeNearest(unUsed, path[k]);
                     if (pColumn < 0) {
                         path[k--] = 0;
                         if (k < n - unUsed.size()) return false;
@@ -208,31 +220,67 @@ class Square {
         return true;
     }
 
+    int nextUnUsed(int i) {
+        auto it = find_if(unUsed.begin(), unUsed.end(), [i](int j) { return j > i; });
+        if (it == unUsed.end()) return n;
+        return *it;
+    }
+
+    void insertAscending(vector<int> &l, int i) {
+        for (auto it = l.begin(); it != l.end(); it++) {
+            if (i < *it) {
+                l.insert(it, i);
+                return;
+            }
+        }
+        l.insert(l.end(), i);
+    }
+
     NextResult findNext(int lookFor1) {
         int i, j;
         if (!lookFor1) {
             i = n - 2;
-            j = path[i] + 1;
-        } else {
-            for (int k = 0; k < n; k++) {
-                if (!t[k][path[k]]) {
-                    i = k;
-                    j = path[k] + 1;
-                    break;
+            unUsed.clear();
+            insertAscending(unUsed, path[n - 1]);
+            insertAscending(unUsed, path[i]);
+            while (i >= 0) {
+                for (int k = i; k < n; k++) {
+                    for (auto l = unUsed.begin(); l != unUsed.end(); l++) {
+                        if (k == i && *l <= path[i]) continue;
+                        if (t[k][*l] == 0) {
+                            path[k] = *l;
+                            unUsed.erase(l);
+                            if (i < k) path[i] = takeNearest(unUsed, path[i]);
+                            for (int pI = i + 1; pI < n; pI++) {
+                                if (pI == k) continue;
+                                path[pI] = takeNearest(unUsed, -1);
+                            }
+                            return {true, path};
+                        }
+                    }
                 }
+                i--;
+                insertAscending(unUsed, path[i]);
+            }
+            return {false, path};
+        }
+
+
+        for (int k = 0; k < n; k++) {
+            if (!t[k][path[k]]) {
+                i = k;
+                j = path[k] + 1;
+                break;
             }
         }
+
         fill(used.begin(), used.end(), 0);
-        for (int k = 0; k < (lookFor1 ? i : n - 2); k++) used[path[k]] = 1;
+        for (int k = 0; k < i; k++) used[path[k]] = 1;
         while (i >= 0 && i < n) {
-            while (j < n && (used[j] || (lookFor1 ? t[i][j] == 0 : !zeroCombinations()))) j++;
+            while (j < n && (used[j] || t[i][j] == 0)) j++;
             if (j < n) {
-                if (lookFor1) {
-                    path[i++] = j;
-                    used[j] = 1;
-                } else {
-                    return {true, path};
-                }
+                path[i++] = j;
+                used[j] = 1;
                 j = 0;
             } else {
                 used[path[i]] = 0;
@@ -275,10 +323,10 @@ public:
             }
         } while (x.ok);
         res.push_back(res[0]);
-        auto it =res.end() - 1;
+        auto it = res.end() - 1;
         reverse(it->permutation.begin(), it->permutation.end());
-        it->bit = !(it-1)->bit;
-        it->number = permutationNumber.get(it->permutation)+1;
+        it->bit = !(it - 1)->bit;
+        it->number = permutationNumber.get(it->permutation) + 1;
         return res;
     }
 };
@@ -336,7 +384,7 @@ public:
         for (auto b: nK.table) {
             for (auto g: mK.table) {
                 vector<Pair<int, vector<Pair<int, int>>>> vList;
-                int p0 = 1;
+                int p0 = -1;
                 do {
                     int p = 1;
                     vector<Pair<int, int>> v0;
@@ -395,6 +443,7 @@ public:
 
 int main(int argc, char const *argv[]) {
     int m, n, k;
+
     ifstream file("INPUT.TXT");
     ofstream output("OUTPUT.TXT");
     stringstream buff;
