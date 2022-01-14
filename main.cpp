@@ -48,7 +48,6 @@ int factor(int n) {
 }
 
 class PermutationNumber {
-    vector<uint64_t> factorial;
 
 public:
 
@@ -78,6 +77,8 @@ public:
         }
         return res;
     }
+
+    vector<uint64_t> factorial;
 };
 
 class Permutations {
@@ -319,15 +320,13 @@ public:
             lookFor = !lookFor;
             x = findNext(lookFor);
             if (x.ok) {
-                printArr(x.result.data(), n);
                 res.push_back({lookFor, x.result, permutationNumber.get(x.result)});
             }
         } while (x.ok);
-        res.push_back(res[0]);
-        auto it = res.end() - 1;
-        reverse(it->permutation.begin(), it->permutation.end());
-        it->bit = !(it - 1)->bit;
-        it->number = permutationNumber.get(it->permutation) + 1;
+        auto last = res[0];
+//        reverse(last.permutation.begin(), last.permutation.end());
+        last.number = permutationNumber.factorial[last.permutation.size()];
+        res.push_back(last);
         return res;
     }
 
@@ -367,9 +366,19 @@ public:
                 }
                 Square square(sq);
                 auto list = square.getList();
+                auto getI = [&b](int ii) { return b[ii]; };
+                auto getJ = [&g](int ii) { return g[ii]; };
+                auto convertVector = [&getJ](vector<int> &v) {
+                    vector<int> res(v.size());
+                    for (int i = 0; i < v.size(); i++) res[i] = getJ(v[i]);
+                    return res;
+                };
+                // todo
+                for (auto &it: list) printArr(convertVector(it.permutation).data(), k);
+                cout << endl;
                 int last = 0;
-                for (auto &it: list) {
-                    if (!it.bit) res += it.number - last; else last = it.number;
+                for (int i = list[0].bit ? 1 : 2; i < list.size(); i += 2) {
+                    res += list[i].number - list[i - 1].number;
                 }
             }
         }
