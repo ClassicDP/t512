@@ -282,7 +282,7 @@ class Square {
                 used[j] = 1;
                 j = 0;
             } else {
-                used[path[i]] = 0;
+//                used[path[i]] = 0;
                 i--;
                 j = path[i] + 1;
                 used[path[i]] = 0;
@@ -326,6 +326,7 @@ public:
         auto last = res[0];
 //        reverse(last.permutation.begin(), last.permutation.end());
         last.number = permutationNumber.factorial[last.permutation.size()];
+        last.bit = !(res.end()-1)->bit;
         res.push_back(last);
         return res;
     }
@@ -358,6 +359,7 @@ public:
         Combinations mK(m, k);
         for (auto &it: sq) it.resize(k);
         for (auto b: nK.table) {
+            auto lastRes = res;
             for (auto g: mK.table) {
                 for (int i = 0; i < k; i++) {
                     for (int j = 0; j < k; j++) {
@@ -375,13 +377,17 @@ public:
                 };
                 // todo
                 for (auto &it: list) printArr(convertVector(it.permutation).data(), k);
-                cout << endl;
-                int last = 0;
                 for (int i = list[0].bit ? 1 : 2; i < list.size(); i += 2) {
                     res += list[i].number - list[i - 1].number;
                 }
+                //todo
+                cout << endl;
             }
+            cout << res - lastRes << endl;
+            lastRes = res;
         }
+        //todo
+        cout << endl;
         return res;
     }
 
@@ -420,6 +426,7 @@ public:
         if (n < k || m < k) return 0;
         Combinations nK(n, k);
         Combinations mK(m, k);
+        int lastCnt = 0;
         for (auto &boys: nK.table) {
             for (auto &girls: mK.table) {
                 do {
@@ -431,7 +438,10 @@ public:
                     cnt += p;
                 } while (next_permutation(girls.begin(), girls.end()));
             }
+            cout << cnt - lastCnt << " " ;
+            lastCnt = cnt;
         }
+        cout << endl;
         return cnt;
 
     }
@@ -467,8 +477,8 @@ int main(int argc, char const *argv[]) {
     milliseconds t0 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto list = table.makeList();
     table.printList(list);
-    int n1 = table.calcAll();
     int n2 = table.calc();
+    int n1 = table.calcAll();
     milliseconds t1 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     cout << t1.count() - t0.count() << endl;
     cout << n1 << " " << n2 << endl;
