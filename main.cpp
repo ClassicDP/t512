@@ -375,19 +375,16 @@ public:
                     for (int i = 0; i < v.size(); i++) res[i] = getJ(v[i]);
                     return res;
                 };
-                // todo
-                for (auto &it: list) printArr(convertVector(it.permutation).data(), k);
+//                // todo
+//                for (auto &it: list) printArr(convertVector(it.permutation).data(), k);
                 for (int i = list[0].bit ? 1 : 2; i < list.size(); i += 2) {
                     res += list[i].number - list[i - 1].number;
                 }
-                //todo
-                cout << endl;
-            }
-            cout << res - lastRes << endl;
+
             lastRes = res;
         }
-        //todo
-        cout << endl;
+//        //todo
+//        cout << endl;
         return res;
     }
 
@@ -470,18 +467,13 @@ int main(int argc, char const *argv[]) {
     stringstream buff;
     buff << file.rdbuf();
     Table table(buff);
-    output << table.calc() << endl;
     using namespace std::chrono;
-    vector<int> v0(10);
-    for (int i = 0; i < 10; i++) v0[i] = i;
     milliseconds t0 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    auto list = table.makeList();
-    table.printList(list);
-    int n2 = table.calc();
     int n1 = table.calcAll();
     milliseconds t1 = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     cout << t1.count() - t0.count() << endl;
-    cout << n1 << " " << n2 << endl;
+    cout << n1 << endl;
+    output << n1 << endl;
     output.close();
     return 0;
 }
