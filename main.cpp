@@ -7,6 +7,7 @@
 #include <chrono>
 #include <vector>
 
+
 using namespace std;
 
 
@@ -165,60 +166,31 @@ struct NextResult {
     bool ok;
     vector<int> result;
 };
+struct Zeros {
+    int row, col;
+};
 
 class Square {
     vector<vector<int>> &t;
     int n;
-    vector<int> used, path, unUsed, toNewPath;
+    vector<int> used, path, unUsed;
+    bool nearestTopChange;
     PermutationNumber permutationNumber;
 
 
     int takeNearest(vector<int> &v, int k) {
+        if (nearestTopChange) k = -1;
         auto it =
                 find_if(v.begin(), v.end(), [k](const int &it) { return it > k; });
         if (it != v.end()) {
             int res = *it;
+            nearestTopChange = nearestTopChange || res > k;
             v.erase(it);
             return res;
         }
         return -1;
     }
 
-    bool pathZCheck() {
-        for (int k = n - unUsed.size(); k < n; k++)
-            if (!t[k][path[k]]) return true;
-        return false;
-    }
-
-
-    bool zeroCombinations() {
-        unUsed.clear();
-        for (int l = 0; l < n; l++) if (!used[l]) unUsed.push_back(l);
-        bool solve;
-        do {
-            toNewPath = unUsed;
-            int k = n - unUsed.size();
-            int pColumn;
-            while (k < n) {
-                do {
-                    pColumn = takeNearest(unUsed, path[k]);
-                    if (pColumn < 0) {
-                        path[k--] = 0;
-                        if (k < n - unUsed.size()) return false;
-                        int ret = path[k]++;
-                        toNewPath.insert(find_if(toNewPath.begin(), toNewPath.end(),
-                                                 [ret](const int &r) { return ret < r; }), ret);
-                    } else {
-                        path[k] = pColumn;
-                        k++;
-                    }
-                } while (pColumn < 0);
-            }
-            solve = pathZCheck();
-            if (!solve) path[n - 1]++;
-        } while (!solve);
-        return true;
-    }
 
     int nextUnUsed(int i) {
         auto it = find_if(unUsed.begin(), unUsed.end(), [i](int j) { return j > i; });
@@ -236,35 +208,61 @@ class Square {
         l.insert(l.end(), i);
     }
 
+    void delValue(vector<int> &l, int i) {
+        auto it = find(l.begin(), l.end(), i);
+        if (it != l.end()) l.erase(it);
+    }
+
     NextResult findNext(int lookFor1) {
         int i, j;
+        vector<vector<int>> pull;
+        vector<Zeros> zeros;
         if (!lookFor1) {
             i = n - 2;
             unUsed.clear();
             insertAscending(unUsed, path[n - 1]);
-            insertAscending(unUsed, path[i]);
             while (i >= 0) {
-                for (int k = i; k < n; k++) {
-                    for (auto l = unUsed.begin(); l != unUsed.end(); l++) {
-                        if (k == i && *l <= path[i]) continue;
-                        if (t[k][*l] == 0) {
-                            path[k] = *l;
-                            unUsed.erase(l);
-                            if (i < k) path[i] = takeNearest(unUsed, path[i]);
-                            for (int pI = i + 1; pI < n; pI++) {
-                                if (pI == k) continue;
-                                path[pI] = takeNearest(unUsed, -1);
-                            }
-                            return {true, path};
-                        }
-                    }
-                }
-                i--;
                 insertAscending(unUsed, path[i]);
+                for (auto it: unUsed) {
+                    if (it > path[i] && !t[i][it]) zeros.push_back({i, it});
+                    for (int k = i + 1; k < n; k++) if (!t[k][it]) zeros.push_back({k, it});
+                }
+
+                auto savePath = path;
+                auto saveUnused = unUsed;
+                for (auto &it: zeros) {
+                    delValue(unUsed, it.col);
+                    int zeroChangeRow = path[it.row] < it.col ? it.row : n;
+                    path[it.row] = it.col;
+                    nearestTopChange = i == zeroChangeRow;
+                    if (i != it.row) path[i] = takeNearest(unUsed, path[i]);
+                    bool ok = path[i] >= 0;
+                    if (ok)
+                        for (int k = i + 1; k < n; k++)
+                            if (k != it.row) {
+                                ok &= ((path[k] = takeNearest(unUsed, path[k])) >= 0);
+                                if (!ok) break;
+                            } else { nearestTopChange |= (k == zeroChangeRow); }
+                    if (ok) pull.push_back(path);
+                    path = savePath;
+                    unUsed = saveUnused;
+                }
+                auto cmp = [](vector<int> &a, vector<int> &b) {
+                    for (int i = 0; i < min(a.size(), b.size()); i++) {
+                        if (a[i] < b[i]) return true;
+                        if (a[i] > b[i]) return false;
+                    }
+                };
+                if (!pull.empty()) {
+                    sort(pull.begin(), pull.end(), cmp);
+                    path = pull[0];
+                    return {true, path};
+                }
+                pull.clear();
+                i--;
             }
             return {false, path};
         }
-
 
         for (int k = 0; k < n; k++) {
             if (!t[k][path[k]]) {
@@ -293,7 +291,10 @@ class Square {
     }
 
 public:
-    Square(vector<vector<int>> &t) : t(t), n(t.size()), permutationNumber(n) {
+    Square(vector<vector<int>>
+           &t) :
+
+            t(t), n(t.size()), permutationNumber(n) {
         used.resize(n);
         path.resize(n);
         unUsed.reserve(n);
@@ -329,6 +330,7 @@ public:
         it->number = permutationNumber.get(it->permutation) + 1;
         return res;
     }
+
 };
 
 class Table {
